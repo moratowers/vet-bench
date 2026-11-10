@@ -1,4 +1,4 @@
-"""The Linux shell sandbox, probed inside real containers. NOT YET RUN.
+"""The Linux shell sandbox, probed inside real containers.
 
 These are the container counterpart of tests/test_shell.py. They run vf-validate in
 container mode, which builds each task's real container (task setup), locks its network,
@@ -14,7 +14,7 @@ they skip unless VET_LINUX_PROBES names one:
     VET_LINUX_PROBES=docker .venv/bin/python -m pytest tests/test_linux_probes.py   # Linux + Docker
     VET_LINUX_PROBES=prime  .venv/bin/python -m pytest tests/test_linux_probes.py   # Prime sandboxes
 
-Until they have passed, the container mode is marked "untested on Linux" in the README.
+They passed on GitHub Actions (ubuntu-24.04, Docker) on 2026-11-10 and run there on every push.
 """
 
 import json

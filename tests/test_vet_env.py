@@ -184,7 +184,7 @@ def test_shell_mode_adds_run_shell_and_says_so():
     from vet_bench.shell import ShellToolset
     from vet_bench.taskset import VetTaskConfig
 
-    read, shell = VetTaskConfig(), VetTaskConfig(tools="shell")
+    read, shell = VetTaskConfig(), VetTaskConfig(tools="shell", shell_backend="sandbox-exec")
     assert type(VetTask.toolsets(read)[0]) is FolderToolset
     assert type(VetTask.toolsets(shell)[0]) is ShellToolset
     config = VetTasksetConfig(id="vet-bench", task=shell)
