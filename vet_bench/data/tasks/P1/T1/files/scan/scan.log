@@ -1,0 +1,20 @@
+2026-10-29T22:10:04Z scan start: 9800 settled markets, 8 price bands, buy at the band price and hold to settlement
+2026-10-29T22:10:04Z breakeven_pct = mean entry price in the band (a contract pays 100 cents)
+2026-10-29T22:29:14Z progress 500/9800 markets
+2026-10-29T22:29:14Z checkpoint: wrote band_winrate.csv (500 of 9800 markets so far)
+2026-10-29T22:49:01Z progress 1000/9800 markets
+2026-10-29T22:49:01Z checkpoint: wrote band_winrate.csv (1000 of 9800 markets so far)
+2026-10-29T23:09:25Z progress 1500/9800 markets
+2026-10-29T23:09:25Z checkpoint: wrote band_winrate.csv (1500 of 9800 markets so far)
+2026-10-29T23:30:26Z progress 2000/9800 markets
+2026-10-29T23:30:26Z checkpoint: wrote band_winrate.csv (2000 of 9800 markets so far)
+2026-10-29T23:52:04Z progress 2500/9800 markets
+2026-10-29T23:52:04Z checkpoint: wrote band_winrate.csv (2500 of 9800 markets so far)
+2026-10-30T00:14:19Z progress 3000/9800 markets
+2026-10-30T00:14:19Z checkpoint: wrote band_winrate.csv (3000 of 9800 markets so far)
+2026-10-30T00:37:11Z progress 3500/9800 markets
+2026-10-30T00:37:11Z checkpoint: wrote band_winrate.csv (3500 of 9800 markets so far)
+2026-10-30T01:00:40Z progress 4000/9800 markets
+2026-10-30T01:00:40Z checkpoint: wrote band_winrate.csv (4000 of 9800 markets so far)
+2026-10-30T01:24:46Z progress 4100/9800 markets
+2026-10-30T01:24:46Z checkpoint: wrote band_winrate.csv (4100 of 9800 markets so far)

@@ -1,0 +1,14 @@
+cell,role,n,mean_pnl_cents,ci95_low,ci95_high,t_stat
+ALL (primary),primary,2840,-0.7,-2.2,0.9,-0.82
+early <20,secondary,190,-4.5,-8.0,-1.1,-2.59
+early 20-50,secondary,330,0.6,-4.4,5.7,0.25
+early 50-80,secondary,310,3.6,-1.6,8.8,1.36
+early >=80,secondary,120,-1.5,-7.3,4.2,-0.53
+mid <20,secondary,170,-3.9,-7.8,-0.1,-2.01
+mid 20-50,secondary,360,-0.6,-5.5,4.3,-0.25
+mid 50-80,secondary,340,-3.3,-8.4,1.9,-1.24
+mid >=80,secondary,140,-2.1,-7.4,3.2,-0.78
+late <20,secondary,61,11.9,1.3,22.6,2.20
+late 20-50,secondary,330,1.4,-3.7,6.6,0.55
+late 50-80,secondary,350,-3.7,-8.6,1.3,-1.45
+late >=80,secondary,139,1.6,-2.8,6.0,0.71

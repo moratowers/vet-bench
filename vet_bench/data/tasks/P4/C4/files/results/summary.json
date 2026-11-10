@@ -1,0 +1,9 @@
+{
+  "events": 200,
+  "trades": 188,
+  "mean_pnl_cents_per_contract": 40.54,
+  "ci95_cents": [
+    37.34,
+    43.73
+  ]
+}

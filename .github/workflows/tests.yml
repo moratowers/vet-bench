@@ -1,0 +1,25 @@
+name: tests
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  unit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m venv .venv && .venv/bin/pip install -e ".[dev]"
+      - run: .venv/bin/vf-validate vet-bench --only-gold --runtime.type subprocess
+      - run: .venv/bin/python -m pytest -q
+  linux-probes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m venv .venv && .venv/bin/pip install -e ".[dev]"
+      - run: docker version
+      - run: VET_LINUX_PROBES=docker .venv/bin/python -m pytest tests/test_linux_probes.py -rA

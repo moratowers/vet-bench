@@ -1,0 +1,22 @@
+105 of 1500 trades (7.0%) do not match the ledger
+
+T00018  backtester=-27.44  ledger=-27.93
+T00049  backtester=27.44  ledger=26.95
+T00057  backtester=-15.51  ledger=-15.98
+T00074  backtester=12.48  ledger=12.0
+T00116  backtester=-2.88  ledger=-3.36
+T00155  backtester=-43.0  ledger=-43.5
+T00174  backtester=23.0  ledger=22.5
+T00188  backtester=13.63  ledger=13.16
+T00280  backtester=44.16  ledger=43.68
+T00325  backtester=36.26  ledger=35.77
+T00331  backtester=4.9  ledger=4.41
+T00337  backtester=-28.0  ledger=-28.5
+T00341  backtester=-2.82  ledger=-3.29
+T00347  backtester=-32.0  ledger=-32.5
+T00356  backtester=-25.5  ledger=-26.0
+T00362  backtester=7.0  ledger=6.5
+T00364  backtester=-2.82  ledger=-3.29
+T00373  backtester=-13.44  ledger=-13.92
+T00392  backtester=-2.35  ledger=-2.82
+T00426  backtester=-18.13  ledger=-18.62

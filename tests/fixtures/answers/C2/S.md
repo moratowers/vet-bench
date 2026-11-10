@@ -1,0 +1,3 @@
+bt/backtest.py still fills on a candle low touching the limit, which is only a proxy. Re-simulated from data/trades.csv by side and queue (sells at the limit beyond queue_ahead_at_placement, or a sell through the limit), 401 of 1,000 orders fill, exactly the same windows the candle rule fills (40.1%). On those fills the mean is +9.8 cents per contract; the 95% interval is [+5.4, +14.3] by window, [+5.1, +14.5] clustering 20 windows a day in id order, and [+2.5, +17.1] by week. The maker fee is zero (data/README.txt). The proxy happens to agree with the tape here.
+
+Verdict: not established. Do not act on it yet.
