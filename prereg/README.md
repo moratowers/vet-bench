@@ -12,4 +12,4 @@ These five files are the pilot's frozen plan and its four addenda, copied word f
 
 Check a file with `shasum -a 256 prereg/PREREG.md`. The blinding seed is the first 8 hex digits of the plan's hash read as an integer: `055b7380` is 89879424.
 
-Times are the private repository's commit times. The plan froze at 2026-11-09T02:11:55Z, before any main run. Addendum A came before any smoke or main run, and B before the main runs resumed. C came during grading and D after scoring; each says what it changes and why. The write-up is at [moratowers.dev/vet-bench](https://moratowers.dev/vet-bench/).
+Times are the private repository's commit times, which come after each file was written; each addendum's own header gives the time it was written. The plan froze at 2026-11-09T02:11:55Z, before any main run. Addendum A came before any smoke or main run, and B before the main runs resumed. C came during grading and D after scoring; each says what it changes and why. The write-up is at [moratowers.dev/vet-bench](https://moratowers.dev/vet-bench/).
