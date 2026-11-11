@@ -6,7 +6,7 @@ type: software
 authors:
   - family-names: Mora
     given-names: Antonio
-version: 0.1.1
+version: 0.1.2
 license: MIT
 repository-code: "https://github.com/moratowers/vet-bench"
 url: "https://app.primeintellect.ai/dashboard/environments/moratowers/vet-bench"
