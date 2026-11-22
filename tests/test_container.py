@@ -11,8 +11,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
+import socket
+import struct
 import subprocess
 import sys
+import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -85,6 +89,10 @@ def good_answers(argv) -> Result:
                     out = "scan"
                 if probe.output and "{" in probe.output:  # the output-cap probe
                     out = "z" * (container.OUTPUT_LIMIT * 4)
+                if probe.name == "no internet by IP":  # what Docker's cut network gives
+                    out = "\n".join(f"{h}:{p} {'tls' if n else 'http'}: no connection: "
+                                    "ConnectionRefusedError: [Errno 111] Connection refused"
+                                    for h, p, n in container.NO_REPLY_TARGETS)
                 return Result(0, out)
             kind = probe.expect[0]
             text = {"network": "OSError: [Errno 101] Network is unreachable",
@@ -131,7 +139,7 @@ def test_container_mode_task_data():
         d = t.data
         assert d.image == container.DEFAULT_IMAGE and d.workdir == container.WORKDIR
         assert d.agent_user == container.AGENT_USER
-        assert d.network.allow == []  # no egress once setup is done
+        assert d.network.allow == []  # allow=[] once setup is done
         assert "bash tool" in d.system_prompt and "run_shell" not in d.system_prompt
     for t in tasks():
         assert t.data.image is None and t.data.agent_user is None and t.data.network.allow == ["*"]
@@ -349,6 +357,156 @@ def test_a_probe_that_takes_too_long_fails(monkeypatch):
     monkeypatch.setattr(container.time, "monotonic", lambda: next(clock))
     failures = asyncio.run(container.run_probes(FakeRuntime(good_answers), slow=False))
     assert any(f.startswith("a detached child cannot hold the call") for f in failures)
+
+
+# ---------------------------------------------------------------- the IP probe's script
+
+IP_PROBE = next(p for p in container.PROBES if p.name == "no internet by IP")
+
+
+@dataclass
+class FakeSocket:
+    """A connected socket whose one read returns `reply`, or raises it if it is an error."""
+
+    reply: object = b""
+    sent: list = field(default_factory=list)
+
+    def sendall(self, data):
+        self.sent.append(data)
+
+    def recv(self, n):
+        if isinstance(self.reply, BaseException):
+            raise self.reply
+        return self.reply
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *exc):
+        return False
+
+
+def run_ip_script(monkeypatch, capsys, connect):
+    """The probe's own script, run in this process with socket.create_connection replaced
+    by `connect(address)`: (exit code, output)."""
+    monkeypatch.setattr(socket, "create_connection", lambda address, timeout: connect(address))
+    with pytest.raises(SystemExit) as done:
+        exec(container.no_reply_check(), {"__name__": "__main__"})
+    return done.value.code, capsys.readouterr().out.strip()
+
+
+def refuse(error):
+    def connect(address):
+        raise error
+    return connect
+
+
+def answer(reply, only=None):
+    """Every connect succeeds; the read gives `reply` (on `only`, if given; b"" elsewhere)."""
+    return lambda address: FakeSocket(reply if only in (None, address) else b"")
+
+
+@pytest.mark.parametrize(
+    ("connect", "passes", "shown"),
+    [(refuse(ConnectionRefusedError(111, "Connection refused")), True, "no connection: ConnectionRefusedError"),
+     (refuse(OSError(101, "Network is unreachable")), True, "no connection: OSError: [Errno 101]"),
+     (refuse(socket.timeout("timed out")), True, "no connection: TimeoutError: timed out"),
+     (answer(b""), True, "connected, 0 bytes back: end of file"),
+     (answer(ConnectionResetError(104, "Connection reset by peer")), True, "connected, 0 bytes back: reset"),
+     (answer(socket.timeout("timed out")), True, "connected, 0 bytes back: timed out"),
+     (answer(b"\x16\x03\x03\x00\x02\x02\x28", only=("8.8.8.8", 443)), False, "8.8.8.8:443 tls: REPLY: 7 bytes back"),
+     (answer(ValueError("a new kind of failure")), False, "UNEXPECTED: ValueError: a new kind of failure"),
+     (refuse(OSError(99, "Cannot assign requested address")), False, "UNEXPECTED: OSError: [Errno 99]")],
+    ids=["refused", "unreachable", "connect timed out", "end of file", "reset", "read timed out",
+         "bytes back", "unknown exception", "unknown connect wording"],
+)
+def test_the_ip_probe_passes_on_no_reply_and_fails_on_a_reply_or_anything_unknown(
+        monkeypatch, capsys, connect, passes, shown):
+    code, out = run_ip_script(monkeypatch, capsys, connect)
+    assert (code == 0) is passes and shown in out, out
+    assert len(out.splitlines()) == len(container.NO_REPLY_TARGETS)  # one bounded line each
+    rt = FakeRuntime(lambda argv: Result(code, out) if argv[-1].endswith(IP_PROBE.command) else good_answers(argv))
+    failures = asyncio.run(container.run_probes(rt, slow=False))
+    assert [f.split(":")[0] for f in failures] == ([] if passes else ["no internet by IP"])
+
+
+def test_the_ip_probe_sends_a_client_hello_or_a_request_to_each_target(monkeypatch, capsys):
+    sockets = {}
+
+    def connect(address):
+        sockets[address] = FakeSocket()
+        return sockets[address]
+
+    code, out = run_ip_script(monkeypatch, capsys, connect)
+    assert code == 0 and re.search(IP_PROBE.output, out)
+    for host, port, name in container.NO_REPLY_TARGETS:
+        (sent,) = sockets[(host, port)].sent
+        if name:  # a TLS handshake record that names the host
+            assert sent[:1] == b"\x16" and name.encode() in sent
+        else:
+            assert sent.startswith(b"GET / HTTP/1.1\r\n")
+    assert "'" not in IP_PROBE.command[len("python3 -c '"):-1]  # safe inside bash's quotes
+
+
+def test_the_ip_probe_fails_if_it_cannot_make_a_client_hello(monkeypatch, capsys):
+    """With no ClientHello nothing is sent, and a real server then sends nothing back:
+    the probe must fail on that, never pass on the silence."""
+    import ssl
+
+    def no_tls(*args, **kwargs):
+        raise ssl.SSLError("cannot make a ClientHello")
+
+    monkeypatch.setattr(ssl.SSLContext, "wrap_bio", no_tls)
+    code, out = run_ip_script(monkeypatch, capsys, answer(socket.timeout("timed out")))
+    assert code == 1 and out.count("UNEXPECTED: SSLError") == 2, out
+
+
+def test_the_ip_probe_fails_on_an_unknown_error_on_read(monkeypatch, capsys):
+    code, out = run_ip_script(monkeypatch, capsys, answer(OSError(113, "No route to host")))
+    assert code == 1 and out.count("UNEXPECTED: OSError: [Errno 113]") == 3, out
+
+
+def local_server(behaviour: str) -> int:
+    """A one-connection server on 127.0.0.1 that reads the request, then closes, resets or
+    answers with three bytes. Returns its port."""
+    listener = socket.socket()
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(1)
+
+    def serve():
+        conn, _ = listener.accept()
+        conn.recv(4096)
+        if behaviour == "reset":
+            conn.setsockopt(socket.SOL_SOCKET, socket.SO_LINGER, struct.pack("ii", 1, 0))
+        elif behaviour == "answer":
+            conn.sendall(b"\x16\x03\x03")
+        conn.close()
+        listener.close()
+
+    threading.Thread(target=serve, daemon=True).start()
+    return listener.getsockname()[1]
+
+
+def test_the_ip_probes_script_on_real_local_sockets():
+    """The same script as `python3 -c`, on 127.0.0.1 only: a port where nothing listens,
+    servers that close or reset after reading, and one that answers."""
+    free = socket.socket()
+    free.bind(("127.0.0.1", 0))
+    closed = free.getsockname()[1]
+    free.close()
+    held = (("127.0.0.1", closed, "localhost"), ("127.0.0.1", local_server("close"), "localhost"),
+            ("127.0.0.1", local_server("reset"), "localhost"), ("127.0.0.1", local_server("close"), ""))
+    done = subprocess.run([sys.executable, "-c", container.no_reply_check(held)],
+                          capture_output=True, text=True, timeout=60)
+    out = done.stdout.strip()
+    assert done.returncode == 0 and re.search(container.no_reply_output(held), out), done
+    assert [line.split(": ", 1)[1].split(":")[0] for line in out.splitlines()] == [
+        "no connection", "connected, 0 bytes back", "connected, 0 bytes back", "connected, 0 bytes back"]
+    assert out.splitlines()[1].endswith("end of file") and out.splitlines()[2].endswith("reset")
+    leak = (("127.0.0.1", local_server("answer"), "localhost"),)
+    done = subprocess.run([sys.executable, "-c", container.no_reply_check(leak)],
+                          capture_output=True, text=True, timeout=60)
+    assert done.returncode == 1 and "tls: REPLY: 3 bytes back" in done.stdout, done
 
 
 # ---------------------------------------------------------------- the answer-key search
