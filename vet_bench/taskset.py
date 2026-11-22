@@ -77,7 +77,7 @@ class VetTaskConfig(vf.TaskConfig):
     shell_backend: Literal["auto", "sandbox-exec", "container"] = "auto"
     """"sandbox-exec": our run_shell tool under macOS sandbox-exec (vet_bench/shell.py).
     "container": verifiers' bash harness in a docker or prime container (vet_bench/
-    container.py; UNTESTED ON LINUX). "auto": sandbox-exec on macOS, container elsewhere."""
+    container.py; probes pass in CI, no model has run in it). "auto": sandbox-exec on macOS, container elsewhere."""
     container_image: str = container.DEFAULT_IMAGE
     container_packages: list[str] = list(container.DEFAULT_PACKAGES)
     toolset: vf.ToolsetConfig = vf.ToolsetConfig()

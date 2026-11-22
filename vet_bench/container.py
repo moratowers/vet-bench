@@ -1,8 +1,9 @@
 """The Linux shell backend: verifiers' own `bash` harness in a container runtime.
 
-UNTESTED ON LINUX. Everything here that can run without a container is unit-tested
-(tests/test_container.py); the probes that prove the sandbox holds (`PROBES`, run by
-`VetTask.validate`) have not yet run in a real container. See the README.
+NO MODEL HAS RUN IN THIS MODE. Everything here that can run without a container is
+unit-tested (tests/test_container.py); the probes that test the sandbox (`PROBES`, run by
+`VetTask.validate`) pass in a real Docker container in CI (tests/test_linux_probes.py).
+See the README.
 
 Where `vet_bench/shell.py` builds its own sandbox on macOS, this backend uses what
 verifiers v1 already provides (docs/runtimes.md, docs/tasksets.md, docs/env.md):
